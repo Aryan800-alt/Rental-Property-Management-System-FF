@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="description" content="FlatFinder — Tenant Portal. Browse listings, submit applications, and manage your tenancy." />
+    <meta name="robots" content="index, follow" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#1d4ed8" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="FlatFinder Tenant" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="FlatFinder — Tenant Portal" />
+    <meta property="og:description" content="Browse listings, submit applications, and manage your tenancy." />
+    <meta property="og:site_name" content="FlatFinder" />
+
+    <!--
+      ── Cloudinary config is now fetched dynamically from /api/config ──
+    -->
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <title>FlatFinder — Tenant</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <nav id="app-nav" role="navigation" aria-label="Main navigation"></nav>
+    <main id="app-root" role="main" aria-live="polite" aria-atomic="false"></main>
+    <div id="app-toast" role="status" aria-live="assertive" aria-atomic="true" aria-relevant="additions text"></div>
+    <div id="app-modal" role="dialog" aria-modal="true" aria-label="Dialog" aria-hidden="true"></div>
+
+    <!-- ── TEMPLATES ────────────────────────────────────────────── -->
+    <template id="tmpl-tenant-dashboard">
+      <div class="container page-content">
+        <div class="page-header">
+          <h1 style="font-size: var(--font-size-2xl);">Welcome back, {{FIRST_NAME}} 👋</h1>
+          <a class="btn btn--primary" href="#/tenant/search" data-route="/tenant/search">🔍 Search Flats</a>
+        </div>
+        <div class="card">
+          <h3 class="card-title">My Bookings</h3>
+          <div class="table-wrap">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th scope="col">Flat</th>
+                  <th scope="col">Dates</th>
+                  <th scope="col">Total Rent</th>
+                  <th scope="col">Status</th>
+                  <th scope="col">Action</th>
+                </tr>
+              </thead>
+              <tbody>{{BOOKING_ROWS}}</tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </template>
+
+    <template id="tmpl-tenant-booking-row">
+      <tr>
+        <td>
+          <strong>{{FLAT_TITLE}}</strong>
+          <br><small class="text-muted">📍 {{CITY}}</small>
+        </td>
+        <td>{{CHECK_IN}} → {{CHECK_OUT}}</td>
+        <td>₹{{TOTAL_RENT}}</td>
+        <td>
+          <span class="badge badge--{{STATUS_CLASS}}">
+            {{STATUS}}
+          </span>
+        </td>
+        <td>{{ACTION_BUTTON}}</td>
+      </tr>
+    </template>
+
+    <template id="tmpl-tenant-search">
+      <div class="container page-content">
+        <div class="page-header"><h2>Search Flats</h2></div>
+        <form id="flat-search-filter-form" class="filter-bar card" autocomplete="off">
+          <input class="form-input" name="city" type="text"
+            aria-label="Filter by city" placeholder="City…" maxlength="100" />
+          <select class="form-select" name="type" aria-label="Filter by flat type">
+            <option value="">All Types</option>
+            <option>1BHK</option>
+            <option>2BHK</option>
+            <option>3BHK</option>
+            <option>Studio</option>
+            <option>4BHK+</option>
+          </select>
+          <select class="form-select" name="furnished" aria-label="Filter by furnished status">
+            <option value="">Furnished?</option>
+            <option value="1">Yes</option>
+            <option value="0">No</option>
+          </select>
+          <input class="form-input" name="min_rent" type="number"
+            min="0" step="100" aria-label="Minimum rent" placeholder="Min ₹"
+            inputmode="numeric" />
+          <input class="form-input" name="max_rent" type="number"
+            min="0" step="100" aria-label="Maximum rent" placeholder="Max ₹"
+            inputmode="numeric" />
+          <button class="btn btn--primary" type="submit">Filter</button>
+          <button class="btn btn--secondary" type="reset" id="filter-reset-btn">Clear</button>
+        </form>
+        <p class="text-muted" style="margin-bottom:var(--space-md)" aria-live="polite">
+          {{TOTAL_FLATS}} flat{{S_PLURAL}} found
+        </p>
+        <div class="flat-grid" role="list">{{CARDS}}</div>
+        {{PAGINATION}}
+      </div>
+    </template>
+
+    <template id="tmpl-tenant-flat-card">
+        <article class="flat-card card">
+          <div class="flat-card__header">
+            <span class="badge badge--neutral">{{TYPE}}</span>
+            {{FURNISHED_BADGE}}
+          </div>
+          {{IMAGE_WRAP}}
+          <h3 class="flat-card__title">{{TITLE}}</h3>
+          <p class="flat-card__city">📍 {{CITY}}</p>
+          <p class="flat-card__rent">₹{{RENT}}<span>/mo</span></p>
+          <p class="text-muted" style="font-size:0.8rem">Owner: {{OWNER_NAME}}</p>
+          <a class="btn btn--primary btn--sm mt-sm" href="#/tenant/flat/{{FLAT_ID}}"
+             data-route="/tenant/flat/{{FLAT_ID}}">
+            View Details →
+          </a>
+        </article>
+    </template>
+
+    <template id="tmpl-tenant-flat-details">
+      <div class="container page-content">
+        <a class="back-link" href="#/tenant/search" data-route="/tenant/search">← Back to Search</a>
+        {{GALLERY}}
+        <div class="flat-detail-layout">
+          <div class="flat-detail-main card">
+            <div class="flat-detail-header">
+              <div>
+                <h1 style="font-size: var(--font-size-2xl);">{{TITLE}}</h1>
+                <p class="text-muted" style="margin-top:4px">📍 {{CITY}} • {{ADDRESS}}</p>
+              </div>
+              <div class="flat-detail-price">
+                <span class="price">₹{{RENT}}</span><span class="text-muted">/month</span>
+              </div>
+            </div>
+
+            {{DESCRIPTION}}
+
+            <div class="stat-grid">
+              <div class="stat-box">
+                <span class="stat-box__label">Type</span>
+                <span class="stat-box__value">{{TYPE}}</span>
+              </div>
+              <div class="stat-box">
+                <span class="stat-box__label">Furnished</span>
+                <span class="stat-box__value">{{FURNISHED_TEXT}}</span>
+              </div>
+              <div class="stat-box">
+                <span class="stat-box__label">Available From</span>
+                <span class="stat-box__value">{{AVAILABLE_FROM}}</span>
+              </div>
+              <div class="stat-box">
+                <span class="stat-box__label">Deposit</span>
+                <span class="stat-box__value">{{DEPOSIT}}</span>
+              </div>
+              {{EXTRA_STATS}}
+            </div>
+
+            {{AMENITIES_SECTION}}
+
+            <div class="mt-lg">
+              {{BOOK_BUTTON}}
+            </div>
+          </div>
+          {{OWNER_CONTACT}}
+        </div>
+      </div>
+    </template>
+
+    <template id="tmpl-tenant-booking">
+      <div class="container page-content">
+        <a class="back-link" href="#/tenant/flat/{{FLAT_ID}}"
+           data-route="/tenant/flat/{{FLAT_ID}}">← Back to Details</a>
+        <div class="card form-card" style="max-width:680px">
+          <h1 style="font-size: var(--font-size-2xl);">Book Flat</h1>
+          <p class="form-card__sub">
+            {{FLAT_TITLE}} — ₹{{FLAT_RENT}}/month
+          </p>
+          <form id="booking-form">
+            <input type="hidden" name="flat_id" value="{{FLAT_ID}}" />
+            <div class="form-group">
+              <label class="form-label" for="check-in">Check-in Date</label>
+              <input class="form-input" id="check-in" name="check_in" type="date"
+                min="{{TODAY}}" required />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="check-out">Check-out Date</label>
+              <input class="form-input" id="check-out" name="check_out" type="date"
+                min="{{TOMORROW}}" required />
+            </div>
+            <div id="rent-preview" class="rent-preview hidden" aria-live="polite">
+              <p>Estimated Rent: <strong id="rent-preview-value"></strong></p>
+            </div>
+            <button class="btn btn--primary btn--full" type="submit"
+                    data-label="Confirm Booking">Confirm Booking</button>
+          </form>
+        </div>
+      </div>
+    </template>
+
+    <noscript>
+      <p style="text-align:center;padding:2rem;font-family:sans-serif;">
+        FlatFinder requires JavaScript to run. Please enable it in your browser settings.
+      </p>
+    </noscript>
+
+    <!-- Role hint for router -->
+    <script>window.FF_ROLE_HINT = 'tenant';</script>
+
+    <!-- FlatFinder modules — load order matters -->
+    <!-- (11a fix) ff-core MUST load first to establish globals. app.js MUST load last to boot the router. -->
+    <script src="ff-core.js"></script>
+    <script src="ff-auth.js"></script>
+    <script src="ff-tenant.js"></script>
+    <script src="ff-owner.js"></script>
+    <script src="ff-admin.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>

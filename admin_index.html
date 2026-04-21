@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="description" content="FlatFinder — Admin Portal. Platform management, user oversight, and system configuration." />
+    <meta name="robots" content="index, follow" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#dc2626" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="FlatFinder Admin" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="FlatFinder — Admin Portal" />
+    <meta property="og:description" content="Platform management, user oversight, and listing approvals." />
+    <meta property="og:site_name" content="FlatFinder" />
+
+    <!--
+      ── Cloudinary config is now fetched dynamically from /api/config ──
+    -->
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <title>FlatFinder — Admin</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <nav id="app-nav" role="navigation" aria-label="Main navigation"></nav>
+    <main id="app-root" role="main" aria-live="polite" aria-atomic="false"></main>
+    <div id="app-toast" role="status" aria-live="assertive" aria-atomic="true" aria-relevant="additions text"></div>
+    <div id="app-modal" role="dialog" aria-modal="true" aria-label="Dialog" aria-hidden="true"></div>
+
+    <!-- ── TEMPLATES ────────────────────────────────────────────── -->
+    <template id="tmpl-admin-dashboard">
+      <div class="container page-content">
+        <div class="page-header"><h1>Admin Dashboard</h1></div>
+        <div class="stat-grid">
+          <div class="stat-card card">
+            <p style="font-size:1.5rem;margin-bottom:var(--space-xs)">👥</p>
+            <p class="stat-card__label">Total Users</p>
+            <p class="stat-card__value">{{TOTAL_USERS}}</p>
+          </div>
+          <div class="stat-card card">
+            <p style="font-size:1.5rem;margin-bottom:var(--space-xs)">🏠</p>
+            <p class="stat-card__label">Total Flats</p>
+            <p class="stat-card__value">{{TOTAL_FLATS}}</p>
+          </div>
+          <div class="stat-card card">
+            <p style="font-size:1.5rem;margin-bottom:var(--space-xs)">📋</p>
+            <p class="stat-card__label">Bookings</p>
+            <p class="stat-card__value">{{TOTAL_BOOKINGS}}</p>
+          </div>
+          <div class="stat-card card">
+            <p style="font-size:1.5rem;margin-bottom:var(--space-xs)">⏳</p>
+            <p class="stat-card__label">Pending Reviews</p>
+            <p class="stat-card__value">{{PENDING_REVIEWS}}</p>
+          </div>
+        </div>
+        <div class="flex-between mt-lg">
+          <a class="btn btn--primary" href="#/admin/approvals" data-route="/admin/approvals">
+            ✅ Review Listings {{PENDING_BADGE}}
+          </a>
+          <a class="btn btn--secondary" href="#/admin/users" data-route="/admin/users">👥 Manage Users</a>
+        </div>
+      </div>
+    </template>
+
+    <template id="tmpl-admin-approvals">
+      <div class="container page-content">
+        <div class="page-header">
+          <h1>Listing Approvals</h1>
+          <select class="form-select" id="approval-status-filter" style="width:auto;min-width:150px">
+            <option value="">All Status</option>
+            <option value="pending">Pending</option>
+            <option value="approved">Approved</option>
+            <option value="rejected">Rejected</option>
+          </select>
+        </div>
+        <div class="card">
+          <div class="table-wrap">
+            <table class="table">
+              <thead><tr><th>Flat</th><th>Owner</th><th>Submitted</th><th>Status</th><th>Actions</th></tr></thead>
+              <tbody>{{APPROVAL_ROWS}}</tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </template>
+
+    <template id="tmpl-admin-approval-row">
+      <tr>
+        <td>
+          <strong>{{TITLE}}</strong>
+          <br><small class="text-muted">📍 {{CITY}} · {{TYPE}} · ₹{{RENT}}</small>
+        </td>
+        <td>{{OWNER}}</td>
+        <td>{{SUBMITTED}}</td>
+        <td>
+          <span class="badge badge--{{STATUS_CLASS}}">{{STATUS}}</span>
+        </td>
+        <td>{{ACTIONS}}</td>
+      </tr>
+    </template>
+
+    <template id="tmpl-admin-users">
+      <div class="container page-content">
+        <div class="page-header"><h1>User Management</h1></div>
+        <div class="card">
+          <div class="filter-bar filter-bar--inline">
+            <input class="form-input" id="user-search-input" placeholder="Search by name or email…" />
+            <select class="form-select" id="user-role-filter">
+              <option value="">All Roles</option>
+              <option value="tenant">Tenant</option>
+              <option value="owner">Owner</option>
+              <option value="admin">Admin</option>
+            </select>
+            <select class="form-select" id="user-status-filter">
+              <option value="">All Statuses</option>
+              <option value="active">Active</option>
+              <option value="suspended">Suspended</option>
+            </select>
+          </div>
+          <div class="table-wrap">
+            <table class="table">
+              <thead><tr><th>User</th><th>Role</th><th>Status</th><th>Joined</th><th>Actions</th></tr></thead>
+              <tbody id="users-tbody">{{USER_ROWS}}</tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </template>
+
+    <template id="tmpl-admin-user-row">
+      <tr>
+        <td>
+          <strong>{{NAME}}</strong>
+          <br><small class="text-muted">{{EMAIL}}</small>
+        </td>
+        <td><span class="badge badge--neutral">{{ROLE}}</span></td>
+        <td><span class="badge badge--{{STATUS_CLASS}}">{{STATUS}}</span></td>
+        <td>{{JOINED}}</td>
+        <td>{{ACTIONS}}</td>
+      </tr>
+    </template>
+    <noscript>
+      <p style="text-align:center;padding:2rem;font-family:sans-serif;">
+        FlatFinder requires JavaScript to run. Please enable it in your browser settings.
+      </p>
+    </noscript>
+
+    <!-- Role hint for router -->
+    <script>window.FF_ROLE_HINT = 'admin';</script>
+
+    <!-- FlatFinder modules — load order matters -->
+    <!-- (11a fix) ff-core MUST load first to establish globals. app.js MUST load last to boot the router. -->
+    <script src="ff-core.js"></script>
+    <script src="ff-auth.js"></script>
+    <script src="ff-tenant.js"></script>
+    <script src="ff-owner.js"></script>
+    <script src="ff-admin.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>

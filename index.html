@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="description" content="FlatFinder — Find and manage rental flats with ease." />
+    <meta name="robots" content="index, follow" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#1d4ed8" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="FlatFinder" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="FlatFinder" />
+    <meta property="og:description" content="Find and manage rental flats with ease." />
+    <meta property="og:site_name" content="FlatFinder" />
+
+    <!--
+      ── Cloudinary config is now fetched dynamically from /api/config ──
+    -->
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <title>FlatFinder</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <nav id="app-nav" role="navigation" aria-label="Main navigation"></nav>
+    <main id="app-root" role="main" aria-live="polite" aria-atomic="false"></main>
+    <div id="app-toast" role="status" aria-live="assertive" aria-atomic="true" aria-relevant="additions text"></div>
+    <div id="app-modal" role="dialog" aria-modal="true" aria-label="Dialog" aria-hidden="true"></div>
+
+    <!-- ── TEMPLATES ────────────────────────────────────────────── -->
+    <template id="tmpl-auth">
+      <div class="auth-wrapper">
+        <div class="auth-card">
+          <div class="auth-logo">🏠</div>
+          <h1 class="auth-title">FlatFinder</h1>
+          <p class="auth-sub">{{SUBTEXT}}</p>
+
+          <form id="auth-form" class="auth-form"
+                autocomplete="on"
+                data-mode="{{MODE}}">
+            {{SIGNUP_FIELDS}}
+
+            <div class="form-group">
+              <label class="form-label" for="auth-email">Email</label>
+              <input class="form-input" id="auth-email" name="email" type="email"
+                placeholder="you@example.com"
+                autocomplete="email"
+                spellcheck="false"
+                required />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="auth-password">Password</label>
+              <div class="input-wrap">
+                <input class="form-input" id="auth-password" name="password" type="password"
+                  placeholder="{{PASSWORD_PLACEHOLDER}}"
+                  autocomplete="{{PASSWORD_AUTOCOMPLETE}}"
+                  required minlength="6" maxlength="128" />
+                <button type="button" class="input-eye" id="toggle-password"
+                        aria-label="Toggle password visibility">👁</button>
+              </div>
+            </div>
+
+            {{ROLE_FIELDS}}
+
+            <div id="auth-error" class="form-error hidden" role="alert" aria-live="polite"></div>
+
+            <button class="btn btn--primary btn--full" type="submit" id="auth-submit"
+                    data-label="{{SUBMIT_LABEL}}">
+              {{SUBMIT_LABEL}}
+            </button>
+          </form>
+
+          <p class="auth-switch">
+            {{SWITCH_TEXT}} <a href="{{SWITCH_LINK}}" data-route="{{SWITCH_LINK}}">{{SWITCH_ACTION}}</a>
+          </p>
+        </div>
+      </div>
+    </template>
+
+    <noscript>
+      <p style="text-align:center;padding:2rem;font-family:sans-serif;">
+        FlatFinder requires JavaScript to run. Please enable it in your browser settings.
+      </p>
+    </noscript>
+
+    <!-- Load order is critical — each file depends on the previous -->
+    <!-- (11a fix) ff-core MUST load first to establish globals. app.js MUST load last to boot the router. -->
+    <script src="ff-core.js"></script>
+    <script src="ff-auth.js"></script>
+    <script src="ff-tenant.js"></script>
+    <script src="ff-owner.js"></script>
+    <script src="ff-admin.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>
